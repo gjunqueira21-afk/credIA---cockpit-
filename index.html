@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0e8f65">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Credia">
+<title>Credia — Leitor CNAB 400 Celcoin</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f4f0;--surface:#fff;--surface2:#f0efe9;--surface3:#e6e4dc;
+  --border:rgba(0,0,0,0.09);--border-md:rgba(0,0,0,0.16);--border-hi:rgba(0,0,0,0.26);
+  --text:#181816;--muted:#5c5b57;--hint:#8c8b85;
+  --grn:#0e8f65;--grn-bg:#e3f5ed;--grn-dk:#065c40;
+  --blu:#1a5eb8;--blu-bg:#e8f0fb;--blu-dk:#0c3a7a;
+  --amb:#a06000;--amb-bg:#fdf0d8;
+  --red:#c0392b;--red-bg:#faeaea;
+  --r:10px;--rs:6px;
+  --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px)
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#191917;--surface:#242422;--surface2:#2e2e2b;--surface3:#383835;
+  --border:rgba(255,255,255,0.07);--border-md:rgba(255,255,255,0.13);--border-hi:rgba(255,255,255,0.22);
+  --text:#f0efe8;--muted:#b0afa8;--hint:#787770;
+  --grn:#1db87f;--grn-bg:#04342c;--grn-dk:#9fe1cb;
+  --blu:#5b9df5;--blu-bg:#0c2a55;--blu-dk:#aac8ff;
+  --amb:#f0a830;--amb-bg:#412402;
+  --red:#f07070;--red-bg:#3a1010;
+}}
+html{-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh;-webkit-tap-highlight-color:transparent}
+
+/* ═══ LOGIN GATE ═══ */
+#gate{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px;padding-top:calc(24px + var(--safe-t))}
+.gate-card{background:var(--surface);border:0.5px solid var(--border);border-radius:16px;padding:36px 30px;width:100%;max-width:360px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.08)}
+.gate-logo{font-size:30px;font-weight:700;color:var(--grn);letter-spacing:-1px;margin-bottom:4px}
+.gate-sub{font-size:12.5px;color:var(--hint);margin-bottom:26px}
+.gate-ico{font-size:40px;margin-bottom:18px}
+#gatePass{width:100%;background:var(--surface2);border:1px solid var(--border-md);border-radius:10px;color:var(--text);font-size:16px;padding:13px 15px;outline:none;text-align:center;letter-spacing:1px;transition:border-color .15s}
+#gatePass:focus{border-color:var(--grn)}
+.gate-btn{width:100%;background:var(--grn);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;margin-top:14px}
+.gate-btn:active{opacity:.85}
+.gate-err{color:var(--red);font-size:12.5px;margin-top:14px;min-height:16px;opacity:0;transition:opacity .15s}
+.gate-err.show{opacity:1}
+.gate-foot{font-size:10.5px;color:var(--hint);margin-top:24px}
+body.locked{overflow:hidden}
+body.locked #app{display:none}
+
+nav{background:var(--surface);border-bottom:0.5px solid var(--border);min-height:52px;display:flex;align-items:center;padding:0 20px;padding-top:var(--safe-t);gap:12px;position:sticky;top:0;z-index:200}
+.logo{font-size:17px;font-weight:600;color:var(--grn);letter-spacing:-.5px}
+.logo span{font-size:12px;color:var(--hint);font-weight:400;margin-left:6px}
+.nav-r{margin-left:auto;display:flex;align-items:center;gap:8px}
+.nav-fn{font-size:11px;color:var(--hint);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-badge{background:var(--grn-bg);color:var(--grn-dk);border-radius:20px;padding:2px 10px;font-size:11px;font-weight:500;display:none}
+.nav-logout{background:none;border:0.5px solid var(--border-md);border-radius:20px;color:var(--hint);font-size:11px;padding:3px 11px;cursor:pointer}
+.nav-logout:hover{color:var(--red);border-color:var(--red)}
+
+.page{max-width:1560px;margin:0 auto;padding:20px;padding-bottom:calc(20px + var(--safe-b))}
+
+/* Upload */
+#upArea{background:var(--surface);border:1.5px dashed var(--border-hi);border-radius:var(--r);padding:58px 32px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:20px}
+#upArea:hover,#upArea.drag{border-color:var(--grn);background:var(--grn-bg)}
+#upArea input{display:none}
+.up-ico{font-size:42px;margin-bottom:14px;opacity:.75}
+.up-title{font-size:16px;font-weight:500;margin-bottom:6px}
+.up-sub{font-size:13px;color:var(--muted);margin-bottom:16px}
+.btn-ok{background:var(--grn);color:#fff;border:none;border-radius:var(--rs);padding:8px 22px;font-size:13px;font-weight:500;cursor:pointer}
+.btn-ok:hover{opacity:.88}
+
+/* File bar */
+#fileBar{background:var(--grn-bg);border:0.5px solid var(--grn);border-radius:var(--rs);padding:9px 14px;font-size:12.5px;color:var(--grn-dk);display:none;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.fb-close{margin-left:auto;cursor:pointer;opacity:.5;font-size:17px;line-height:1}
+.fb-close:hover{opacity:1}
+
+/* Summary */
+#summary{display:none;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.sc{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);padding:13px 15px}
+.sc-lbl{font-size:10.5px;color:var(--hint);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.sc-val{font-size:21px;font-weight:500}
+.sc-val.g{color:var(--grn)}
+.sc-val.sm{font-size:13px;font-weight:500}
+
+/* Toolbar */
+#toolbar{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);padding:11px 14px;display:none;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.fg{display:flex;align-items:center;gap:6px}
+.fg label{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.fg input,.fg select{background:var(--surface2);border:0.5px solid var(--border-md);border-radius:var(--rs);color:var(--text);font-size:12.5px;padding:5px 9px;outline:none;transition:border-color .12s}
+.fg input[type=text]{width:200px}
+.fg input:focus,.fg select:focus{border-color:var(--grn)}
+.tb-sp{flex:1}
+.btn-g{background:var(--surface2);border:0.5px solid var(--border-md);border-radius:var(--rs);color:var(--text);padding:5px 13px;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:5px}
+.btn-g:hover{border-color:var(--grn);color:var(--grn)}
+.btn-clr{background:none;border:none;color:var(--hint);font-size:12px;cursor:pointer;padding:3px 6px;border-radius:4px}
+.btn-clr:hover{color:var(--red)}
+.fc{font-size:11px;color:var(--hint);padding:0 4px}
+
+/* Table */
+#tableWrap{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);overflow:hidden;display:none}
+.tw-hd{padding:10px 14px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+.pill{background:var(--grn-bg);color:var(--grn-dk);border-radius:20px;padding:2px 10px;font-size:11.5px;font-weight:500}
+.scroll-x{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
+th{background:var(--surface2);border-bottom:0.5px solid var(--border-md);padding:8px 9px;text-align:left;font-size:11px;font-weight:500;color:var(--muted);white-space:nowrap;position:sticky;top:0;cursor:pointer;user-select:none}
+th:hover{color:var(--text)}
+.si{opacity:.3;margin-left:3px;font-size:10px}
+th.asc .si::after{content:'↑';opacity:1}
+th.desc .si::after{content:'↓';opacity:1}
+.si::after{content:'⇅'}
+td{padding:7px 9px;border-bottom:0.5px solid var(--border);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr.dr:hover td{background:var(--surface2);cursor:pointer}
+tr.dr.exp td{background:var(--blu-bg)}
+.mono{font-family:'SF Mono','Cascadia Code','Courier New',monospace;font-size:11.5px}
+.right{text-align:right}.center{text-align:center}
+.vg{color:var(--grn);font-weight:500}
+
+/* Column widths */
+.cseq{width:48px}.cccb{width:90px}.cpar{width:46px}.cnome{width:185px}
+.ccpf{width:112px}.cvenc{width:80px}.cval{width:88px}.cemiss{width:78px}
+.clogr{width:200px}.ccep{width:76px}.cced{width:220px}.ccnpj{width:130px}
+.cocc{width:120px}
+
+/* Detail */
+tr.det-row td{padding:14px 18px;background:var(--surface2);white-space:normal;cursor:default}
+.det-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:10px 16px}
+.df label{display:block;font-size:10px;color:var(--hint);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.df span{font-size:13px;word-break:break-word}
+.df span.big{font-size:15px;font-weight:500;color:var(--grn)}
+.df span.mono{font-size:12px;word-break:break-all}
+
+/* Pagination */
+.pg{display:flex;align-items:center;gap:6px;padding:9px 14px;border-top:0.5px solid var(--border);font-size:12px;color:var(--muted)}
+.pg-sp{flex:1}
+.pg-btn{background:var(--surface2);border:0.5px solid var(--border-md);border-radius:var(--rs);color:var(--text);padding:4px 11px;font-size:12px;cursor:pointer}
+.pg-btn:disabled{opacity:.3;cursor:default}
+.pg-btn:hover:not(:disabled){border-color:var(--grn)}
+#perPage{background:var(--surface2);border:0.5px solid var(--border-md);border-radius:var(--rs);color:var(--text);font-size:12px;padding:3px 6px;margin-left:8px}
+
+#emptyState{display:none;text-align:center;padding:60px 20px;color:var(--hint)}
+#emptyState .ei{font-size:36px;margin-bottom:10px}
+
+/* CCB breakdown section */
+#ccbSection{display:none;margin-bottom:16px}
+.ccb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.ccb-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);padding:12px 14px;cursor:pointer;transition:border-color .12s}
+.ccb-card:hover{border-color:var(--grn)}
+.ccb-card.active{border-color:var(--grn);background:var(--grn-bg)}
+.ccb-num{font-size:13px;font-weight:500;font-family:'SF Mono','Courier New',monospace;margin-bottom:4px}
+.ccb-nome{font-size:11px;color:var(--muted);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ccb-row{display:flex;justify-content:space-between;font-size:11.5px}
+.ccb-parcelas{color:var(--hint)}
+.ccb-total{color:var(--grn);font-weight:500}
+
+/* Occurrence badge */
+.occ{display:inline-block;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:500}
+.o01{background:var(--amb-bg);color:var(--amb)}
+.o02{background:var(--grn-bg);color:var(--grn)}
+.o03{background:var(--red-bg);color:var(--red)}
+.o06{background:var(--blu-bg);color:var(--blu)}
+.o08,.o09{background:var(--surface3);color:var(--muted)}
+
+/* Raw modal */
+.raw-btn{background:none;border:0.5px solid var(--border-md);border-radius:4px;font-size:10px;color:var(--hint);padding:2px 7px;cursor:pointer;margin-left:8px}
+.raw-btn:hover{color:var(--text);border-color:var(--border-hi)}
+#rawModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;align-items:center;justify-content:center;padding:16px}
+#rawModal.open{display:flex}
+.raw-box{background:var(--surface);border-radius:var(--r);padding:22px;max-width:960px;width:96%;max-height:82vh;overflow:auto}
+.raw-title{font-size:13px;font-weight:500;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.raw-close{cursor:pointer;opacity:.5;font-size:18px;line-height:1}
+.raw-close:hover{opacity:1}
+.raw-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:14px;background:var(--surface2);border-radius:var(--rs);padding:12px}
+.rfl{font-size:11px}.rfl b{color:var(--hint);font-weight:400;display:block;font-size:10px}
+pre{font-family:'SF Mono','Courier New',monospace;font-size:10.5px;white-space:pre-wrap;word-break:break-all;color:var(--text);line-height:1.8;background:var(--surface2);border-radius:var(--rs);padding:10px}
+
+/* ═══════════ MOBILE ═══════════ */
+@media(max-width:720px){
+  body{font-size:13.5px}
+  nav{padding:0 14px;padding-top:var(--safe-t);gap:8px}
+  .logo{font-size:16px}
+  .logo span{display:none}
+  .nav-fn{display:none}
+  .page{padding:14px;padding-bottom:calc(14px + var(--safe-b))}
+
+  #upArea{padding:40px 18px}
+  .up-ico{font-size:36px}
+
+  /* Summary: 2-up scannable grid */
+  #summary{grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:14px}
+  .sc{padding:11px 12px}
+  .sc-val{font-size:18px}
+
+  /* CCB cards full width */
+  .ccb-grid{grid-template-columns:1fr}
+
+  /* Toolbar: stack filters, full-width inputs */
+  #toolbar{gap:9px}
+  .fg{flex:1 1 100%;flex-wrap:wrap}
+  .fg label{flex:0 0 84px}
+  .fg input,.fg select{flex:1;min-width:0;font-size:16px;padding:9px 10px}
+  .fg input[type=text]{width:auto}
+  .btn-clr{flex:0 0 auto}
+  .tb-sp{display:none}
+  .btn-g{flex:1;justify-content:center;padding:9px 13px;font-size:13px}
+
+  /* Table stays horizontally scrollable; hint user */
+  .tw-hd{flex-wrap:wrap;font-size:12px}
+  .tw-hd span[style]{flex:1 1 100%;margin-left:0!important;margin-top:2px}
+  th,td{padding:8px 10px}
+
+  /* Detail + raw grids single column */
+  .det-grid{grid-template-columns:1fr 1fr}
+  .raw-fields{grid-template-columns:1fr}
+  .raw-box{padding:16px}
+
+  .pg{flex-wrap:wrap;gap:8px}
+  #perPage{margin-left:auto}
+}
+@media(max-width:420px){
+  #summary{grid-template-columns:1fr 1fr}
+  .det-grid{grid-template-columns:1fr}
+  .gate-card{padding:30px 22px}
+}
+</style>
+</head>
+<body class="locked">
+
+<!-- ═══ TELA DE SENHA ═══ -->
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-ico">🔒</div>
+    <div class="gate-logo">Credia</div>
+    <div class="gate-sub">Cockpit · Leitor CNAB 400 Celcoin</div>
+    <form id="gateForm" autocomplete="off">
+      <input type="password" id="gatePass" placeholder="Senha de acesso" autocomplete="current-password" inputmode="text">
+      <button type="submit" class="gate-btn">Entrar</button>
+    </form>
+    <div class="gate-err" id="gateErr">Senha incorreta. Tente novamente.</div>
+    <div class="gate-foot">Acesso restrito · Credia Soluções</div>
+  </div>
+</div>
+
+<div id="app">
+<nav>
+  <div class="logo">Credia<span>Leitor CNAB 400 · Celcoin</span></div>
+  <div class="nav-r">
+    <span class="nav-fn" id="navFn"></span>
+    <span class="nav-badge" id="navBadge"></span>
+    <button class="nav-logout" onclick="logout()">Sair</button>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div id="upArea">
+    <input type="file" id="fi" accept=".txt,.rem,.cnab">
+    <div class="up-ico">📂</div>
+    <div class="up-title">Arquivo CNAB 400 — Celcoin</div>
+    <div class="up-sub">Remessa ou Retorno · UTF-8 ou Windows-1252 · arraste ou clique</div>
+    <button class="btn-ok" onclick="event.stopPropagation();document.getElementById('fi').click()">Selecionar arquivo</button>
+  </div>
+
+  <div id="fileBar">
+    <span>📄</span><span id="fbTxt"></span>
+    <span class="fb-close" onclick="resetFile()">✕</span>
+  </div>
+
+  <div id="summary">
+    <div class="sc"><div class="sc-lbl">Total de parcelas</div><div class="sc-val" id="sTotal">—</div></div>
+    <div class="sc"><div class="sc-lbl">CCBs únicas</div><div class="sc-val g" id="sCcbs">—</div></div>
+    <div class="sc"><div class="sc-lbl">Devedores</div><div class="sc-val" id="sDevs">—</div></div>
+    <div class="sc"><div class="sc-lbl">Valor total</div><div class="sc-val sm" id="sValor">—</div></div>
+    <div class="sc"><div class="sc-lbl">Data geração</div><div class="sc-val sm" id="sData">—</div></div>
+    <div class="sc"><div class="sc-lbl">Empresa cedente</div><div class="sc-val sm" id="sCed" style="font-size:11px">—</div></div>
+  </div>
+
+  <!-- CCB breakdown cards -->
+  <div id="ccbSection">
+    <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">CCBs no arquivo — clique para filtrar</div>
+    <div class="ccb-grid" id="ccbGrid"></div>
+  </div>
+
+  <div id="toolbar">
+    <div class="fg"><label>Buscar</label><input type="text" id="srch" placeholder="nome, CPF, CCB…" oninput="applyFilters()"></div>
+    <div class="fg"><label>Devedor</label><select id="fDev" onchange="applyFilters()"><option value="">Todos</option></select></div>
+    <div class="fg"><label>CCB</label><select id="fCcb" onchange="applyFilters()"><option value="">Todas</option></select></div>
+    <div class="fg"><label>Vencimento</label><input type="month" id="fVenc" onchange="applyFilters()" style="background:var(--surface2);border:0.5px solid var(--border-md);border-radius:var(--rs);color:var(--text);font-size:12.5px;padding:5px 8px;outline:none"></div>
+    <button class="btn-clr" onclick="clearFilters()">Limpar</button>
+    <span class="fc" id="fCount"></span>
+    <div class="tb-sp"></div>
+    <button class="btn-g" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn-g" onclick="exportJSON()">⬇ JSON</button>
+  </div>
+
+  <div id="tableWrap">
+    <div class="tw-hd">
+      <span>Parcelas</span><span class="pill" id="countPill">0</span>
+      <span style="margin-left:auto;font-size:11px;color:var(--hint)">↕ cabeçalho para ordenar · linha para expandir · ⇄ arraste para ver mais colunas</span>
+    </div>
+    <div class="scroll-x">
+      <table id="mt">
+        <thead><tr>
+          <th class="cseq" onclick="sortBy('linha')"># <span class="si"></span></th>
+          <th class="cccb" onclick="sortBy('ccb')">CCB <span class="si"></span></th>
+          <th class="cpar center" onclick="sortBy('parc')">Parc. <span class="si"></span></th>
+          <th class="cnome" onclick="sortBy('nome')">Devedor <span class="si"></span></th>
+          <th class="ccpf" onclick="sortBy('cpf')">CPF <span class="si"></span></th>
+          <th class="cvenc" onclick="sortBy('venc')">Vencimento <span class="si"></span></th>
+          <th class="cval right" onclick="sortBy('valor')">Valor (R$) <span class="si"></span></th>
+          <th class="cemiss" onclick="sortBy('emiss')">Emissão <span class="si"></span></th>
+          <th class="clogr">Logradouro</th>
+          <th class="ccep">CEP</th>
+          <th class="cced">Cedente</th>
+          <th class="ccnpj">CNPJ Cedente</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="pg">
+      <span id="pgInfo">—</span><div class="pg-sp"></div>
+      <button class="pg-btn" id="pgPrev" onclick="gp(-1)">‹</button>
+      <span style="padding:0 6px;font-size:12px" id="pgNum">1</span>
+      <button class="pg-btn" id="pgNext" onclick="gp(1)">›</button>
+      <select id="perPage" onchange="cPP()">
+        <option value="25">25/pág</option>
+        <option value="50">50/pág</option>
+        <option value="100">100/pág</option>
+        <option value="200">200/pág</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="emptyState"><div class="ei">🔍</div><p>Nenhuma parcela encontrada com os filtros aplicados.</p></div>
+
+</div>
+
+<div id="rawModal">
+  <div class="raw-box">
+    <div class="raw-title">
+      <span>Linha raw — posições 1-based CNAB 400 Celcoin</span>
+      <span class="raw-close" onclick="cRaw()">✕</span>
+    </div>
+    <div class="raw-fields" id="rawFields"></div>
+    <pre id="rawPre"></pre>
+  </div>
+</div>
+</div><!-- /#app -->
+
+<script>
+// ══════════════════════════════════════════════════════════════════
+//  CONTROLE DE ACESSO (senha client-side)
+//  Para trocar a senha: gere o hash da nova senha no console com
+//    await sha256('SUA_NOVA_SENHA')
+//  e substitua o valor de PASS_HASH abaixo.
+//  Senha padrão atual: credia2026
+// ══════════════════════════════════════════════════════════════════
+async function sha256(str){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+// SHA-256 da senha de acesso. Senha padrão atual: credia2026
+// Para trocar: no console rode  await sha256('NOVA_SENHA')  e cole o resultado aqui.
+const CREDIA_PASS_HASH='8ce34dc2176b27fe8a424080f75ae066eeb5bbc1087adaa94a2c879e823752a4';
+const SESSION_KEY='credia_auth_v1';
+
+function unlock(){
+  document.body.classList.remove('locked');
+  document.getElementById('gate').style.display='none';
+}
+async function tryPass(pass){
+  const h=await sha256(pass);
+  return h===CREDIA_PASS_HASH;
+}
+(function initGate(){
+  if(sessionStorage.getItem(SESSION_KEY)==='ok'){unlock();return;}
+  const form=document.getElementById('gateForm');
+  const inp=document.getElementById('gatePass');
+  const err=document.getElementById('gateErr');
+  setTimeout(()=>inp.focus(),200);
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    if(await tryPass(inp.value)){
+      sessionStorage.setItem(SESSION_KEY,'ok');
+      unlock();
+    }else{
+      err.classList.add('show');
+      inp.value='';inp.focus();
+      setTimeout(()=>err.classList.remove('show'),2500);
+    }
+  });
+})();
+function logout(){
+  sessionStorage.removeItem(SESSION_KEY);
+  location.reload();
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  LAYOUT CNAB 400 CELCOIN — REMESSA — SEGMENTO OBRIGATÓRIO
+//  Posições 1-based conforme documentação oficial Celcoin
+//  Validado empiricamente contra arquivo real (junho 2025)
+// ══════════════════════════════════════════════════════════════════
+const OCC = {'01':'Em processamento','02':'Emitido','03':'Erro','06':'Liquidado','08':'Baixado (prazo)','09':'Baixado (cancelado)'};
+const OCC_CLS = {'01':'o01','02':'o02','03':'o03','06':'o06','08':'o08','09':'o09'};
+
+let allRecs=[], filtered=[], hdr={}, fileType='remessa';
+let sortCol='linha', sortDir='asc', curPg=1, perPg=25, expTr=null, activeCcb=null;
+
+const g = id=>document.getElementById(id);
+const esc = s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function fld(s,a,b){return s.substring(a,b).trim()}
+
+function parseDate(s){
+  if(!s||s.length<6)return '';
+  const yy=s.substring(4,6), yr=+yy<50?'20'+yy:'19'+yy;
+  return `${s.substring(0,2)}/${s.substring(2,4)}/${yr}`;
+}
+function toYM(s){
+  if(!s||s.length<6)return '';
+  const yy=s.substring(4,6), yr=+yy<50?'20'+yy:'19'+yy;
+  return `${yr}-${s.substring(2,4)}`;
+}
+function fmtCpf(s){
+  s=s.replace(/\D/g,'');
+  if(s.length===11)return s.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');
+  if(s.length>=14)return s.substring(0,14).replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5');
+  return s;
+}
+function fmtCnpj(s){
+  s=s.replace(/\D/g,'');
+  return s.length>=14?s.substring(0,14).replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5'):s;
+}
+function fmtCep(s){
+  s=s.replace(/\D/g,'');
+  return s.length===8?s.replace(/(\d{5})(\d{3})/,'$1-$2'):s;
+}
+function brl(n){return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+
+function detectEnc(buf){
+  try{return new TextDecoder('utf-8',{fatal:true}).decode(buf)}
+  catch{return new TextDecoder('windows-1252').decode(buf)}
+}
+
+function parseLine(line, idx){
+  if(!line||line.length<50)return null;
+  const t=line[0];
+  if(t==='0'){
+    return{_t:'hdr',
+      empresa: fld(line,46,76), banco: fld(line,76,94),
+      dataGer: fld(line,94,100)};
+  }
+  if(t==='1'){
+    // CCB base (pos 038-044) and parcela (pos 045-047)
+    const uso = line.substring(37,62).trim();  // Uso da Empresa 25 chars
+    const ccb    = uso.substring(0,7);          // First 7 = CCB base
+    const parcS  = uso.substring(7,10);         // Next 3 = parcela sequence
+    const parc   = parcS && /^\d+$/.test(parcS) ? parseInt(parcS,10) : 0;
+
+    // Valor do Título: pos 127-139 (13 chars, centavos)
+    const valRaw = line.substring(126,139);
+    const valor  = valRaw && /^\d+$/.test(valRaw.trim()) ? parseInt(valRaw,10)/100 : 0;
+
+    const vencRaw  = line.substring(120,126);
+    const emissRaw = line.substring(150,156);
+
+    // CPF: pos 221-234 (14 chars right-padded), extract last 11 for CPF
+    const cpfRaw14 = line.substring(220,234);
+    const cpfDigits = cpfRaw14.replace(/\D/g,'');
+
+    // Nome do Pagador: pos 235-264 (30 chars — Celcoin specific)
+    const nome = fld(line,234,264);
+
+    // Endereço fields (Celcoin layout):
+    const comp   = fld(line,264,274);   // Complemento 265-274
+    const logr   = fld(line,274,304);   // Logradouro 275-304 (30 chars)
+    const numLog = fld(line,304,314);   // Número logradouro 305-314
+    const bairro = fld(line,314,326);   // Bairro 315-326
+    const cep    = fmtCep(fld(line,326,334)); // CEP 327-334
+
+    // After CEP: in this CCB file, cedente fills cidade+estado+sacador fields
+    const cedente = fld(line,334,380);  // pos 335-380 (46 chars combined)
+    const cnpj    = fmtCnpj(fld(line,380,394)); // pos 381-394
+
+    // Ocorrência (para retorno): pos 109-110
+    const occ = line.substring(108,110);
+
+    return{_t:'det', linha:idx+1, ccb, parc, uso,
+      vencRaw, vencimento:parseDate(vencRaw), vencYM:toYM(vencRaw),
+      emissRaw, emissao:parseDate(emissRaw),
+      valor, cpfDigits, cpf:fmtCpf(cpfDigits),
+      nome, comp, logr, numLog, bairro, cep, cedente, cnpj, occ,
+      _raw:line};
+  }
+  if(t==='9')return{_t:'trailer'};
+  return null;
+}
+
+function parseFile(text){
+  const lines=text.split(/\r?\n/);
+  hdr={}; const recs=[];
+  lines.forEach((line,i)=>{
+    if(!line.trim())return;
+    const r=parseLine(line,i);
+    if(!r)return;
+    if(r._t==='hdr')Object.assign(hdr,r);
+    else if(r._t==='det')recs.push(r);
+  });
+  // Detect retorno by ocorrência codes
+  fileType=recs.some(r=>Object.keys(OCC).includes(r.occ))?'retorno':'remessa';
+  return recs;
+}
+
+function buildCcbCards(){
+  const ccbs={};
+  allRecs.forEach(r=>{
+    if(!ccbs[r.ccb])ccbs[r.ccb]={ccb:r.ccb,nome:r.nome,total:0,parcelas:[],valor_parcela:0};
+    ccbs[r.ccb].total+=r.valor;
+    ccbs[r.ccb].parcelas.push(r.parc);
+    ccbs[r.ccb].valor_parcela=r.valor; // same for all parcelas of same CCB
+  });
+  const grid=g('ccbGrid'); grid.innerHTML='';
+  Object.values(ccbs).sort((a,b)=>a.ccb.localeCompare(b.ccb)).forEach(c=>{
+    const div=document.createElement('div');
+    div.className='ccb-card';
+    div.dataset.ccb=c.ccb;
+    const maxP=Math.max(...c.parcelas), minP=Math.min(...c.parcelas);
+    div.innerHTML=`<div class="ccb-num">${c.ccb}</div>
+      <div class="ccb-nome" title="${esc(c.nome)}">${esc(c.nome)}</div>
+      <div class="ccb-row">
+        <span class="ccb-parcelas">${c.parcelas.length} parcelas (${minP}–${maxP}) × R$ ${brl(c.valor_parcela)}</span>
+        <span class="ccb-total">R$ ${brl(c.total)}</span>
+      </div>`;
+    div.addEventListener('click',()=>{
+      if(activeCcb===c.ccb){activeCcb=null;div.classList.remove('active');g('fCcb').value='';}
+      else{
+        activeCcb=c.ccb;
+        document.querySelectorAll('.ccb-card').forEach(d=>d.classList.remove('active'));
+        div.classList.add('active');
+        g('fCcb').value=c.ccb;
+      }
+      applyFilters();
+    });
+    grid.appendChild(div);
+  });
+  g('ccbSection').style.display='block';
+}
+
+function populateFilters(){
+  const ds=g('fDev'); ds.innerHTML='<option value="">Todos</option>';
+  const cs=g('fCcb'); cs.innerHTML='<option value="">Todas</option>';
+  [...new Set(allRecs.map(r=>r.nome))].sort().forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;ds.appendChild(o);});
+  [...new Set(allRecs.map(r=>r.ccb))].sort().forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;cs.appendChild(o);});
+}
+
+function showSummary(){
+  const ucb=new Set(allRecs.map(r=>r.ccb)).size;
+  const udev=new Set(allRecs.map(r=>r.cpfDigits)).size;
+  const tot=allRecs.reduce((s,r)=>s+r.valor,0);
+  g('sTotal').textContent=allRecs.length.toLocaleString('pt-BR');
+  g('sCcbs').textContent=ucb;
+  g('sDevs').textContent=udev;
+  g('sValor').textContent='R$ '+brl(tot);
+  g('sData').textContent=parseDate(hdr.dataGer)||'—';
+  g('sCed').textContent=(allRecs[0]?.cedente||hdr.empresa||'—').substring(0,32);
+  g('summary').style.display='grid';
+}
+
+function applyFilters(){
+  const srch=g('srch').value.toLowerCase();
+  const fDev=g('fDev').value;
+  const fCcb=g('fCcb').value;
+  const fVenc=g('fVenc').value;
+  // Sync card active state
+  document.querySelectorAll('.ccb-card').forEach(d=>{
+    d.classList.toggle('active',d.dataset.ccb===fCcb);
+  });
+  activeCcb=fCcb||null;
+  filtered=allRecs.filter(r=>{
+    if(fDev&&r.nome!==fDev)return false;
+    if(fCcb&&r.ccb!==fCcb)return false;
+    if(fVenc&&r.vencYM!==fVenc)return false;
+    if(srch&&![r.nome,r.cpf,r.ccb,r.cedente,r.logr].join(' ').toLowerCase().includes(srch))return false;
+    return true;
+  });
+  const hidden=allRecs.length-filtered.length;
+  g('fCount').textContent=hidden>0?`${hidden} ocult${hidden>1?'as':'a'}`:'';
+  curPg=1; doSort(); render();
+}
+
+function clearFilters(){
+  g('srch').value='';g('fDev').value='';g('fCcb').value='';g('fVenc').value='';
+  activeCcb=null;
+  document.querySelectorAll('.ccb-card').forEach(d=>d.classList.remove('active'));
+  applyFilters();
+}
+
+function sortBy(col){
+  if(sortCol===col)sortDir=sortDir==='asc'?'desc':'asc';
+  else{sortCol=col;sortDir='asc';}
+  document.querySelectorAll('#mt th').forEach(th=>th.classList.remove('asc','desc'));
+  const cols=['linha','ccb','parc','nome','cpf','vencimento','valor','emissao'];
+  const idx=cols.indexOf(col);
+  if(idx>=0)document.querySelectorAll('#mt th')[idx].classList.add(sortDir);
+  doSort();render();
+}
+
+function doSort(){
+  filtered.sort((a,b)=>{
+    let va=a[sortCol],vb=b[sortCol];
+    if(sortCol==='vencimento'||sortCol==='emissao'){va=a[sortCol+'Raw']||'';vb=b[sortCol+'Raw']||'';}
+    if(typeof va==='string'){va=va.toLowerCase();vb=vb.toLowerCase();}
+    return va<vb?(sortDir==='asc'?-1:1):va>vb?(sortDir==='asc'?1:-1):0;
+  });
+}
+
+function render(){
+  const tbody=g('tbody'); tbody.innerHTML=''; expTr=null;
+  const tot=filtered.length, pages=Math.max(1,Math.ceil(tot/perPg));
+  if(curPg>pages)curPg=pages;
+  const s=(curPg-1)*perPg, slice=filtered.slice(s,s+perPg);
+  g('countPill').textContent=tot;
+  g('pgInfo').textContent=tot===0?'Nenhuma parcela':`${(s+1).toLocaleString('pt-BR')}–${Math.min(s+perPg,tot).toLocaleString('pt-BR')} de ${tot.toLocaleString('pt-BR')}`;
+  g('pgNum').textContent=`${curPg}/${pages}`;
+  g('pgPrev').disabled=curPg<=1; g('pgNext').disabled=curPg>=pages;
+  if(!slice.length){g('tableWrap').style.display='none';g('emptyState').style.display='block';return;}
+  g('emptyState').style.display='none';g('tableWrap').style.display='block';
+
+  slice.forEach(r=>{
+    const tr=document.createElement('tr'); tr.className='dr';
+    const occ=fileType==='retorno'&&OCC[r.occ]?`<span class="occ ${OCC_CLS[r.occ]||''}">${OCC[r.occ]}</span>`:'';
+    const col8=fileType==='retorno'?`<td class="cocc">${occ}</td>`:`<td class="cemiss">${esc(r.emissao)}</td>`;
+    tr.innerHTML=`
+      <td class="cseq mono">${r.linha}</td>
+      <td class="cccb mono">${esc(r.ccb)}</td>
+      <td class="cpar center mono">${String(r.parc).padStart(2,'0')}</td>
+      <td class="cnome" title="${esc(r.nome)}">${esc(r.nome)}</td>
+      <td class="ccpf mono">${esc(r.cpf)}</td>
+      <td class="cvenc">${esc(r.vencimento)}</td>
+      <td class="cval right mono vg">R$ ${brl(r.valor)}</td>
+      ${col8}
+      <td class="clogr" title="${esc(r.logr)+(r.numLog?' '+r.numLog:'')+(r.comp?' '+r.comp:'')}">${esc(r.logr)}${r.numLog?' — '+r.numLog:''}</td>
+      <td class="ccep mono">${esc(r.cep)}</td>
+      <td class="cced" title="${esc(r.cedente)}">${esc(r.cedente)}</td>
+      <td class="ccnpj mono">${esc(r.cnpj)}</td>`;
+    tr.addEventListener('click',()=>toggleDet(tr,r));
+    tbody.appendChild(tr);
+  });
+}
+
+function toggleDet(tr,r){
+  const ex=g('detPanel');
+  if(ex){if(expTr===tr){ex.remove();expTr=null;tr.classList.remove('exp');return;}ex.remove();if(expTr)expTr.classList.remove('exp');}
+  expTr=tr; tr.classList.add('exp');
+  const occ=OCC[r.occ]?`<span class="occ ${OCC_CLS[r.occ]||''}">${OCC[r.occ]} (${r.occ})</span>`:'—';
+  const dr=document.createElement('tr'); dr.id='detPanel'; dr.className='det-row';
+  const td=document.createElement('td'); td.colSpan=12;
+  td.innerHTML=`<div class="det-grid">
+    <div class="df"><label>CCB</label><span class="mono">${esc(r.ccb)}</span></div>
+    <div class="df"><label>Parcela</label><span class="mono">${String(r.parc).padStart(2,'0')}</span></div>
+    <div class="df"><label>Devedor</label><span>${esc(r.nome)}</span></div>
+    <div class="df"><label>CPF</label><span class="mono">${esc(r.cpf)}</span></div>
+    <div class="df"><label>Valor da parcela</label><span class="big">R$ ${brl(r.valor)}</span></div>
+    <div class="df"><label>Vencimento</label><span>${esc(r.vencimento)}</span></div>
+    <div class="df"><label>Data de emissão</label><span>${esc(r.emissao)}</span></div>
+    <div class="df"><label>Logradouro (275-304)</label><span>${esc(r.logr)}</span></div>
+    <div class="df"><label>Nº logradouro (305-314)</label><span>${esc(r.numLog)||'—'}</span></div>
+    <div class="df"><label>Complemento (265-274)</label><span>${esc(r.comp)||'—'}</span></div>
+    <div class="df"><label>Bairro (315-326)</label><span>${esc(r.bairro)||'—'}</span></div>
+    <div class="df"><label>CEP (327-334)</label><span class="mono">${esc(r.cep)}</span></div>
+    <div class="df"><label>Cedente (335-380)</label><span>${esc(r.cedente)}</span></div>
+    <div class="df"><label>CNPJ Cedente (381-394)</label><span class="mono">${esc(r.cnpj)}</span></div>
+    ${fileType==='retorno'?`<div class="df"><label>Ocorrência (109-110)</label><span>${occ}</span></div>`:''}
+    <div class="df"><label>Uso da Empresa (038-062)</label><span class="mono">${esc(r.uso)}</span></div>
+    <div class="df"><label>Linha no arquivo</label><span class="mono">${r.linha} <button class="raw-btn" onclick='showRaw(${JSON.stringify(r._raw)},${JSON.stringify(r)})'>ver raw</button></span></div>
+  </div>`;
+  dr.appendChild(td); tr.parentNode.insertBefore(dr,tr.nextSibling);
+}
+
+function showRaw(raw,r){
+  // Position ruler
+  const ruler=Array.from({length:raw.length},(_,i)=>String(Math.floor(i/10)||' ').slice(-1)).join('');
+  const digit=Array.from({length:raw.length},(_,i)=>String((i+1)%10)).join('');
+  g('rawPre').textContent=ruler+'\n'+digit+'\n'+raw;
+  g('rawFields').innerHTML=`
+    <div class="rfl"><b>CCB (038-044)</b>${esc(r.ccb)}</div>
+    <div class="rfl"><b>Parcela (045-047)</b>${String(r.parc).padStart(3,'0')}</div>
+    <div class="rfl"><b>Vencimento (121-126)</b>${esc(r.vencRaw)}</div>
+    <div class="rfl"><b>Valor/centavos (127-139)</b>${raw.substring(126,139)}</div>
+    <div class="rfl"><b>Emissão (151-156)</b>${esc(r.emissRaw)}</div>
+    <div class="rfl"><b>CPF pagador (221-234)</b>${raw.substring(220,234)}</div>
+    <div class="rfl"><b>Nome pagador (235-264)</b>${raw.substring(234,264)}</div>
+    <div class="rfl"><b>Logradouro (275-304)</b>${raw.substring(274,304)}</div>
+    <div class="rfl"><b>CEP (327-334)</b>${raw.substring(326,334)}</div>
+    <div class="rfl"><b>Cedente (335-380)</b>${raw.substring(334,380).trim()}</div>
+    <div class="rfl"><b>CNPJ (381-394)</b>${raw.substring(380,394)}</div>`;
+  g('rawModal').classList.add('open');
+}
+function cRaw(){g('rawModal').classList.remove('open')}
+g('rawModal').addEventListener('click',e=>{if(e.target===g('rawModal'))cRaw();});
+
+function gp(d){curPg+=d;render();}
+function cPP(){perPg=parseInt(g('perPage').value);curPg=1;render();}
+
+function exportCSV(){
+  const h=['Linha','CCB','Parcela','Devedor','CPF','Vencimento','Valor R$','Emissão','Logradouro','Nº Logr.','Complemento','Bairro','CEP','Cedente','CNPJ Cedente'];
+  if(fileType==='retorno')h.push('Ocorrência');
+  const rows=filtered.map(r=>{
+    const b=[r.linha,r.ccb,r.parc,r.nome,r.cpf,r.vencimento,r.valor.toFixed(2).replace('.',','),r.emissao,r.logr,r.numLog,r.comp,r.bairro,r.cep,r.cedente,r.cnpj];
+    if(fileType==='retorno')b.push(OCC[r.occ]||r.occ);
+    return b;
+  });
+  dl('﻿'+[h,...rows].map(row=>row.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(';')).join('\n'),'text/csv;charset=utf-8','credia_cnab400_'+new Date().toISOString().slice(0,10)+'.csv');
+}
+function exportJSON(){
+  dl(JSON.stringify(filtered.map(({_raw,...r})=>r),null,2),'application/json','credia_cnab400_'+new Date().toISOString().slice(0,10)+'.json');
+}
+function dl(c,m,n){const b=new Blob([c],{type:m});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();}
+
+function loadFile(file){
+  const rd=new FileReader();
+  rd.onload=e=>{
+    const text=detectEnc(e.target.result);
+    allRecs=parseFile(text); filtered=[...allRecs];
+    if(!allRecs.length){alert('Nenhum registro de detalhe (tipo "1") encontrado. Verifique se o arquivo é CNAB 400 Celcoin.');return;}
+    g('upArea').style.display='none';
+    g('fileBar').style.display='flex';
+    g('fbTxt').textContent=`${file.name}  ·  ${allRecs.length} parcelas  ·  ${hdr.empresa||'—'}  ·  Banco: ${hdr.banco||'—'}  ·  Tipo: ${fileType}`;
+    g('navFn').textContent=file.name;
+    const nb=g('navBadge');nb.textContent=fileType==='retorno'?'Retorno':'Remessa';nb.style.display='inline';
+    g('toolbar').style.display='flex';
+    showSummary(); buildCcbCards(); populateFilters(); doSort(); render();
+  };
+  rd.readAsArrayBuffer(file);
+}
+
+function resetFile(){
+  allRecs=[];filtered=[];hdr={};activeCcb=null;
+  ['upArea','summary','ccbSection','toolbar','emptyState'].forEach(id=>{
+    const el=g(id);if(el)el.style.display=id==='upArea'?'block':id==='summary'?'none':'none';
+  });
+  g('upArea').style.display='block';
+  g('fileBar').style.display='none';
+  g('tableWrap').style.display='none';
+  g('navFn').textContent='';g('navBadge').style.display='none';g('fi').value='';
+  g('fDev').innerHTML='<option value="">Todos</option>';
+  g('fCcb').innerHTML='<option value="">Todas</option>';
+}
+
+g('fi').addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0]);});
+const ua=g('upArea');
+ua.addEventListener('dragover',e=>{e.preventDefault();ua.classList.add('drag');});
+ua.addEventListener('dragleave',()=>ua.classList.remove('drag'));
+ua.addEventListener('drop',e=>{e.preventDefault();ua.classList.remove('drag');if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0]);});
+ua.addEventListener('click',()=>g('fi').click());
+</script>
+</body>
+</html>
