@@ -91,15 +91,15 @@ h1 { font-size:21px; font-weight:700; letter-spacing:-.3px; margin:4px 0 0; }
 .gauge { position:relative; width:236px; height:212px; margin:0 auto; }
 .gauge svg { width:236px; height:236px; transform:rotate(135deg); }
 .gauge .track, .gauge .val { fill:none; stroke-linecap:round; stroke-width:14; }
-.gauge .track { stroke:rgba(110,160,235,.18); stroke-dasharray:395.8 527.8; }
-.gauge .val { stroke:url(#gd); stroke-dasharray:0 527.8; filter:drop-shadow(0 0 8px rgba(43,229,168,.45));
+.gauge .track { stroke:rgba(125,165,230,.38); stroke-dasharray:395.8 527.8; }
+.gauge .val { stroke:url(#gd); stroke-dasharray:0 527.8; filter:drop-shadow(0 0 10px rgba(77,248,192,.65));
   transition:stroke-dasharray 1.4s cubic-bezier(.2,.8,.2,1); }
 .gauge-c { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:8px; }
 .gauge-c .big { font-size:34px; font-weight:800; letter-spacing:-1px; line-height:1.05; }
 .gauge-c .big small { font-size:16px; font-weight:600; color:var(--dim); letter-spacing:0; }
 .gauge-c .sub { font-family:'IBM Plex Mono',monospace; font-size:11px; color:#D2DFF5; margin-top:7px; letter-spacing:.06em; }
-.gauge-c .aa { margin-top:9px; font-size:13.5px; font-weight:800; color:#04121F;
-  background:var(--mint); border-radius:999px; padding:5px 13px; }
+.gauge-c .aa { margin-top:9px; font-size:13.5px; font-weight:800; color:#231300;
+  background:var(--amber); border-radius:999px; padding:5px 13px; box-shadow:0 2px 12px rgba(255,201,121,.3); }
 .gauge-ends { display:flex; justify-content:space-between; width:236px; margin:-6px auto 0; font-family:'IBM Plex Mono',monospace; font-size:11px; color:#D2DFF5; padding:0 14px; }
 
 /* kpi grid */
@@ -178,7 +178,7 @@ details summary:focus-visible { outline:2px solid var(--mint); outline-offset:2p
 <div class="bgfix" aria-hidden="true"></div>
 
 <svg width="0" height="0" style="position:absolute"><defs>
-<linearGradient id="gd" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0E8F6B"/><stop offset="100%" stop-color="#2BE5A8"/></linearGradient>
+<linearGradient id="gd" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1FC78F"/><stop offset="100%" stop-color="#4DF8C0"/></linearGradient>
 <linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2BE5A8"/><stop offset="100%" stop-color="#0E6B52"/></linearGradient>
 </defs></svg>
 
