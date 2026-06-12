@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="color-scheme" content="dark">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#050E20">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CredIA">
+<title>CredIA · Cockpit Mobile — Carteira CNAB</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg0:#050E20; --bg1:#0A1830; --bg2:#10213F; --line:rgba(110,160,235,.22); --line2:rgba(110,160,235,.42);
+  --text:#FFFFFF; --dim:#B9CBE8; --mint:#4DF8C0; --mint-deep:#17B286; --amber:#FFC979; --rose:#FFA9BD;
+  --r:18px;
+  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { background:#050E20 !important; }
+body { color:var(--text); font:400 15px/1.55 'Sora',sans-serif; padding-bottom:calc(56px + var(--safe-b)); min-height:100vh; }
+.bgfix { position:fixed; inset:0; z-index:-1; pointer-events:none; background:#050E20;
+  background-image:
+    radial-gradient(90% 50% at 50% -8%, rgba(80,140,255,.16), transparent 60%),
+    repeating-linear-gradient(0deg, transparent 0 39px, rgba(110,160,235,.05) 39px 40px),
+    repeating-linear-gradient(90deg, transparent 0 39px, rgba(110,160,235,.05) 39px 40px); }
+.mono { font-family:'IBM Plex Mono',monospace; }
+.wrap { max-width:600px; margin:0 auto; padding:0 16px; }
+.mint { color:var(--mint); }
+
+/* ═══ GATE (senha) ═══ */
+#gate { position:fixed; inset:0; z-index:1000; background:#050E20; display:flex; align-items:center; justify-content:center; padding:24px; padding-top:calc(24px + var(--safe-t));
+  background-image:radial-gradient(90% 50% at 50% -8%, rgba(80,140,255,.16), transparent 60%); }
+.gate-card { background:linear-gradient(165deg, var(--bg2), var(--bg1)); border:1px solid var(--line); border-radius:24px; padding:36px 28px; width:100%; max-width:340px; text-align:center; box-shadow:0 18px 44px rgba(2,6,18,.55); }
+.gate-ico { font-size:38px; margin-bottom:14px; }
+.gate-logo { font-weight:800; font-size:28px; letter-spacing:-.6px; }
+.gate-logo i { font-style:normal; color:var(--mint); }
+.gate-sub { font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); margin:6px 0 24px; }
+#gatePass { width:100%; background:var(--bg0); border:1px solid var(--line2); border-radius:14px; color:var(--text); font:600 16px 'Sora',sans-serif; padding:14px 16px; outline:none; text-align:center; letter-spacing:1px; }
+#gatePass:focus { border-color:var(--mint); box-shadow:0 0 0 3px rgba(77,248,192,.15); }
+.gate-btn { width:100%; background:var(--mint); color:#04121F; border:none; border-radius:14px; padding:14px; font:800 15px 'Sora',sans-serif; cursor:pointer; margin-top:14px; }
+.gate-btn:active { opacity:.85; }
+.gate-err { color:var(--rose); font-size:12.5px; margin-top:14px; min-height:18px; opacity:0; transition:opacity .15s; }
+.gate-err.show { opacity:1; }
+.gate-foot { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--dim); margin-top:22px; letter-spacing:.08em; }
+body.locked { overflow:hidden; }
+body.locked #app { display:none; }
+
+/* topbar */
+.topbar { position:sticky; top:0; z-index:50; backdrop-filter:blur(14px); background:rgba(5,14,32,.84);
+  border-bottom:1px solid var(--line); padding-top:var(--safe-t); }
+.topbar .wrap { display:flex; align-items:center; justify-content:space-between; padding:13px 16px; gap:10px; }
+.logo { font-weight:800; font-size:21px; letter-spacing:-.4px; }
+.logo i { font-style:normal; color:var(--mint); }
+.live { font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.06em; color:#DCE6F7;
+  display:flex; align-items:center; gap:7px; text-transform:uppercase; max-width:55%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.live::before { content:""; flex:none; width:7px; height:7px; border-radius:50%; background:var(--mint);
+  box-shadow:0 0 10px var(--mint); animation:pulse 2.2s infinite; }
+@keyframes pulse { 50% { opacity:.35; } }
+.top-actions { display:flex; gap:8px; }
+.top-btn { background:none; border:1px solid var(--line2); border-radius:999px; color:var(--dim); font:600 10.5px 'IBM Plex Mono',monospace; padding:5px 12px; cursor:pointer; letter-spacing:.06em; }
+.top-btn:active { color:var(--mint); border-color:var(--mint); }
+
+/* ═══ UPLOAD ═══ */
+#upScreen { padding:36px 0 20px; }
+.up-hero { text-align:center; margin-bottom:24px; }
+.eyebrow { font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:.18em; text-transform:uppercase; color:#C7D6F2; }
+h1 { font-size:21px; font-weight:700; letter-spacing:-.3px; margin:4px 0 0; }
+#upArea { background:linear-gradient(165deg, var(--bg2), var(--bg1)); border:1.5px dashed var(--line2); border-radius:24px; padding:46px 22px; text-align:center; cursor:pointer; transition:border-color .15s; }
+#upArea.drag, #upArea:active { border-color:var(--mint); }
+#upArea input { display:none; }
+.up-ico { font-size:44px; margin-bottom:14px; }
+.up-title { font-size:16px; font-weight:700; margin-bottom:6px; }
+.up-sub { font-size:12.5px; color:var(--dim); margin-bottom:20px; line-height:1.6; }
+.btn-mint { background:var(--mint); color:#04121F; border:none; border-radius:14px; padding:13px 28px; font:800 14px 'Sora',sans-serif; cursor:pointer; }
+.btn-mint:active { opacity:.85; }
+.up-note { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--dim); text-align:center; margin-top:18px; letter-spacing:.06em; line-height:1.8; }
+
+/* ═══ DASH ═══ */
+#dash { display:none; }
+
+/* hero / gauge */
+.hero { padding:24px 0 8px; text-align:center; text-shadow:0 1px 14px rgba(3,8,20,.85); }
+.hero h1 { margin-bottom:18px; }
+.gauge-card { background:linear-gradient(165deg, var(--bg2), var(--bg1)); border:1px solid var(--line);
+  border-radius:24px; padding:22px 14px 16px; max-width:340px; margin:0 auto;
+  box-shadow:0 18px 44px rgba(2,6,18,.55); }
+.gauge { position:relative; width:236px; height:212px; margin:0 auto; }
+.gauge svg { width:236px; height:236px; transform:rotate(135deg); }
+.gauge .track, .gauge .val { fill:none; stroke-linecap:round; stroke-width:14; }
+.gauge .track { stroke:rgba(110,160,235,.18); stroke-dasharray:395.8 527.8; }
+.gauge .val { stroke:url(#gd); stroke-dasharray:0 527.8; filter:drop-shadow(0 0 8px rgba(43,229,168,.45));
+  transition:stroke-dasharray 1.4s cubic-bezier(.2,.8,.2,1); }
+.gauge-c { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding-top:8px; }
+.gauge-c .big { font-size:34px; font-weight:800; letter-spacing:-1px; line-height:1.05; }
+.gauge-c .big small { font-size:16px; font-weight:600; color:var(--dim); letter-spacing:0; }
+.gauge-c .sub { font-family:'IBM Plex Mono',monospace; font-size:11px; color:#D2DFF5; margin-top:7px; letter-spacing:.06em; }
+.gauge-c .aa { margin-top:9px; font-size:13.5px; font-weight:800; color:#04121F;
+  background:var(--mint); border-radius:999px; padding:5px 13px; }
+.gauge-ends { display:flex; justify-content:space-between; width:236px; margin:-6px auto 0; font-family:'IBM Plex Mono',monospace; font-size:11px; color:#D2DFF5; padding:0 14px; }
+
+/* kpi grid */
+.kpis { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:22px; }
+.kpi { background:linear-gradient(160deg, var(--bg2), var(--bg1)); border:1px solid var(--line); border-radius:var(--r);
+  padding:14px 14px 12px; position:relative; overflow:hidden; }
+.kpi::after { content:""; position:absolute; inset:0 auto auto 0; width:100%; height:2px;
+  background:linear-gradient(90deg, var(--mint), transparent 70%); opacity:.5; }
+.kpi span { display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.13em; text-transform:uppercase; color:var(--dim); }
+.kpi b { display:block; color:#FFF; font-size:22px; font-weight:800; letter-spacing:-.5px; margin-top:3px; }
+.kpi b small { font-size:13px; color:var(--dim); font-weight:600; }
+.kpi em { display:block; font-style:normal; font-size:11.5px; color:var(--dim); margin-top:2px; }
+.kpi.amber::after { background:linear-gradient(90deg, var(--amber), transparent 70%); opacity:.9; }
+.kpi.mintb::after { opacity:.9; }
+
+/* sections */
+section { margin-top:34px; }
+h2 { font-size:12px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--mint);
+  display:flex; align-items:center; gap:10px; margin-bottom:13px; }
+h2::after { content:""; flex:1; height:1px; background:linear-gradient(90deg, var(--line2), transparent); }
+.card { background:linear-gradient(160deg, var(--bg2), var(--bg1)); border:1px solid var(--line); border-radius:var(--r); padding:16px; }
+
+/* combo chart */
+.combo-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.combo-wrap::-webkit-scrollbar { height:4px; }
+.combo-wrap::-webkit-scrollbar-thumb { background:var(--line2); border-radius:2px; }
+svg.combo { height:250px; display:block; }
+.cbar { fill:url(#bg1); }
+.ax { font-family:'IBM Plex Mono',monospace; font-size:13px; fill:#D2DFF5; font-weight:600; }
+.barval { font-family:'IBM Plex Mono',monospace; font-size:11px; fill:var(--dim); }
+.chart-leg { display:flex; gap:16px; margin-top:12px; font-size:12px; color:#DCE6F7; font-family:'IBM Plex Mono',monospace; flex-wrap:wrap; }
+.chart-leg i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:-1px; }
+
+/* busca */
+.search { width:100%; background:var(--bg0); border:1px solid var(--line2); border-radius:14px; color:var(--text); font:400 16px 'Sora',sans-serif; padding:12px 15px; outline:none; margin-bottom:12px; }
+.search:focus { border-color:var(--mint); }
+.search::placeholder { color:var(--dim); }
+
+/* ccbs */
+.ccb { background:linear-gradient(160deg, var(--bg2), var(--bg1)); border:1px solid var(--line); border-radius:15px; margin-bottom:8px; overflow:hidden; }
+.ccb summary { list-style:none; display:grid; grid-template-columns:30px 1fr auto; gap:10px; align-items:center; padding:12px 14px; cursor:pointer; }
+.ccb summary::-webkit-details-marker { display:none; }
+.ccb-i { font-size:11px; color:var(--dim); }
+.ccb-main b { display:block; font-size:14px; font-weight:700; color:#FFF; }
+.ccb-main small { font-size:12px; color:var(--dim); }
+.ccb-rate { font-size:15px; font-weight:700; text-align:right; color:var(--mint); }
+.ccb-rate small { display:block; font-size:10px; color:var(--dim); letter-spacing:.08em; }
+.ccb[open] summary { border-bottom:1px dashed var(--line); }
+.ccb-body { padding:10px 14px 13px; }
+.kv { display:flex; justify-content:space-between; gap:10px; font-size:13.5px; padding:4.5px 0; }
+.kv span { color:var(--dim); } .kv b { font-weight:700; color:#FFF; text-align:right; word-break:break-word; }
+.parc-chips { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+.parc-chip { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--dim); border:1px solid var(--line); border-radius:8px; padding:3px 7px; }
+.show-more { width:100%; background:none; border:1px dashed var(--line2); border-radius:14px; color:var(--dim); font:600 12px 'IBM Plex Mono',monospace; padding:12px; cursor:pointer; margin-top:4px; letter-spacing:.08em; }
+.show-more:active { color:var(--mint); border-color:var(--mint); }
+
+/* bars (concentração / vencimentos) */
+.uf-row { display:grid; grid-template-columns:auto 1fr auto; grid-template-rows:auto auto; column-gap:10px; align-items:center; padding:7px 0; }
+.uf-tag { grid-row:1/3; font-weight:600; font-size:11px; color:var(--mint); min-width:38px; }
+.uf-track { height:8px; background:rgba(110,160,235,.16); border-radius:99px; overflow:hidden; }
+.uf-fill { height:100%; background:linear-gradient(90deg, var(--mint-deep), var(--mint)); border-radius:99px; }
+.uf-val { font-size:12.5px; font-weight:700; color:#FFF; }
+.uf-n { grid-column:2/4; font-size:11.5px; color:var(--dim); }
+.card-note { font-size:12px; color:var(--dim); margin-top:10px; }
+
+.tech .kv { border-bottom:1px dashed var(--line); padding:8px 0; }
+.tech .kv:last-child { border:none; }
+footer { margin-top:30px; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--dim); padding:0 24px; line-height:1.7; }
+footer a { color:var(--mint); text-decoration:none; }
+
+@media (prefers-reduced-motion:reduce) { * { animation:none !important; transition:none !important; } }
+details summary:focus-visible { outline:2px solid var(--mint); outline-offset:2px; border-radius:12px; }
+</style>
+</head>
+<body class="locked">
+<div class="bgfix" aria-hidden="true"></div>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+<linearGradient id="gd" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0E8F6B"/><stop offset="100%" stop-color="#2BE5A8"/></linearGradient>
+<linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2BE5A8"/><stop offset="100%" stop-color="#0E6B52"/></linearGradient>
+</defs></svg>
+
+<!-- ═══ SENHA ═══ -->
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-ico">🔒</div>
+    <div class="gate-logo">Cred<i>IA</i></div>
+    <div class="gate-sub">Cockpit da Operação · Mobile</div>
+    <form id="gateForm" autocomplete="off">
+      <input type="password" id="gatePass" placeholder="Senha de acesso" autocomplete="current-password">
+      <button type="submit" class="gate-btn">Entrar</button>
+    </form>
+    <div class="gate-err" id="gateErr">Senha incorreta. Tente novamente.</div>
+    <div class="gate-foot">ACESSO RESTRITO · CREDIA SOLUÇÕES</div>
+  </div>
+</div>
+
+<div id="app">
+
+<div class="topbar"><div class="wrap">
+  <div class="logo">Cred<i>IA</i></div>
+  <div class="live" id="liveTxt">Aguardando arquivo</div>
+  <div class="top-actions">
+    <button class="top-btn" id="btnReset" onclick="resetFile()" style="display:none">Novo</button>
+    <button class="top-btn" onclick="logout()">Sair</button>
+  </div>
+</div></div>
+
+<div class="wrap">
+
+<!-- ═══ UPLOAD ═══ -->
+<div id="upScreen">
+  <div class="up-hero">
+    <div class="eyebrow">Consignado privado · CCBs · CNAB 400 Celcoin</div>
+    <h1>Cockpit da Operação</h1>
+  </div>
+  <div id="upArea">
+    <input type="file" id="fi" accept=".txt,.rem,.cnab">
+    <div class="up-ico">📂</div>
+    <div class="up-title">Carregar remessa / retorno</div>
+    <div class="up-sub">Arquivo CNAB 400 Celcoin<br>UTF-8 ou Windows-1252 · .txt .rem .cnab</div>
+    <button class="btn-mint" onclick="event.stopPropagation();document.getElementById('fi').click()">Selecionar arquivo</button>
+  </div>
+  <div class="up-note">100% processado no seu aparelho<br>nenhum dado sai do celular</div>
+</div>
+
+<!-- ═══ DASHBOARD ═══ -->
+<div id="dash">
+
+<div class="hero">
+  <div class="eyebrow" id="heroEyebrow">Consignado privado · CCBs</div>
+  <h1>Cockpit da Operação</h1>
+  <div class="gauge-card"><div class="gauge">
+    <svg viewBox="0 0 236 236">
+      <circle class="track" cx="118" cy="118" r="84"/>
+      <circle class="val" id="gaugeVal" cx="118" cy="118" r="84"/>
+    </svg>
+    <div class="gauge-c">
+      <div class="big" id="gBig">—</div>
+      <div class="sub">VALOR DE FACE DA CARTEIRA</div>
+      <div class="aa" id="gAa">—</div>
+    </div>
+  </div>
+  <div class="gauge-ends"><span>hoje</span><span id="gEndsMid">fluxo 12 meses</span><span id="gEndsR">fim</span></div></div>
+</div>
+
+<div class="kpis" id="kpis"></div>
+
+<section>
+  <h2>Fluxo de recebimentos</h2>
+  <div class="card">
+    <div class="combo-wrap"><svg class="combo" id="comboSvg"></svg></div>
+    <div class="chart-leg">
+      <span><i style="background:var(--mint)"></i>parcelas/mês (valor de face)</span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2 id="ccbTitle">CCBs em carteira</h2>
+  <input type="search" class="search" id="srch" placeholder="Buscar devedor, CPF ou CCB…">
+  <div id="ccbList"></div>
+  <button class="show-more" id="showMore" style="display:none" onclick="ccbShown+=10;renderCcbs()">MOSTRAR MAIS ▾</button>
+</section>
+
+<section>
+  <h2>Concentração · Top 5 sacados</h2>
+  <div class="card" id="concCard"></div>
+</section>
+
+<section>
+  <h2>Vencimentos por mês</h2>
+  <div class="card" id="vencCard"></div>
+</section>
+
+<section>
+  <h2>Ficha técnica</h2>
+  <div class="card tech" id="techCard"></div>
+</section>
+
+</div><!-- /dash -->
+</div><!-- /wrap -->
+
+<footer id="foot">CredIA Soluções Ltda · cockpit mobile<br><a href="index.html">abrir versão desktop →</a></footer>
+
+</div><!-- /app -->
+
+<script>
+// ═══ SENHA (mesma do site desktop) ═══
+async function sha256(str){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+const CREDIA_PASS_HASH='8ce34dc2176b27fe8a424080f75ae066eeb5bbc1087adaa94a2c879e823752a4';
+const SESSION_KEY='credia_auth_v1';
+function unlock(){document.body.classList.remove('locked');document.getElementById('gate').style.display='none';}
+(function initGate(){
+  if(sessionStorage.getItem(SESSION_KEY)==='ok'){unlock();return;}
+  const form=document.getElementById('gateForm'),inp=document.getElementById('gatePass'),err=document.getElementById('gateErr');
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    if(await sha256(inp.value)===CREDIA_PASS_HASH){sessionStorage.setItem(SESSION_KEY,'ok');unlock();}
+    else{err.classList.add('show');inp.value='';inp.focus();setTimeout(()=>err.classList.remove('show'),2500);}
+  });
+})();
+function logout(){sessionStorage.removeItem(SESSION_KEY);location.reload();}
+
+// ═══ PARSER CNAB 400 CELCOIN (mesmo racional da versão desktop) ═══
+const OCC={'01':'Em processamento','02':'Emitido','03':'Erro','06':'Liquidado','08':'Baixado (prazo)','09':'Baixado (cancelado)'};
+let allRecs=[],hdr={},fileType='remessa',ccbAgg=[],ccbShown=10,srchTerm='';
+const g=id=>document.getElementById(id);
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fld=(s,a,b)=>s.substring(a,b).trim();
+function parseDate(s){if(!s||s.length<6)return'';const yy=s.substring(4,6),yr=+yy<50?'20'+yy:'19'+yy;return`${s.substring(0,2)}/${s.substring(2,4)}/${yr}`;}
+function toYM(s){if(!s||s.length<6)return'';const yy=s.substring(4,6),yr=+yy<50?'20'+yy:'19'+yy;return`${yr}-${s.substring(2,4)}`;}
+function fmtCpf(s){s=s.replace(/\D/g,'');if(s.length===11)return s.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');return s;}
+function fmtCnpj(s){s=s.replace(/\D/g,'');return s.length>=14?s.substring(0,14).replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,'$1.$2.$3/$4-$5'):s;}
+function brl(n){return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function brl0(n){return n.toLocaleString('pt-BR',{maximumFractionDigits:0});}
+function detectEnc(buf){try{return new TextDecoder('utf-8',{fatal:true}).decode(buf)}catch{return new TextDecoder('windows-1252').decode(buf)}}
+const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+function ymLabel(ym){const[y,m]=ym.split('-');return MESES[+m-1]+'/'+y.slice(2);}
+
+function parseLine(line,idx){
+  if(!line||line.length<50)return null;
+  const t=line[0];
+  if(t==='0')return{_t:'hdr',empresa:fld(line,46,76),banco:fld(line,76,94),dataGer:fld(line,94,100)};
+  if(t==='1'){
+    const uso=line.substring(37,62).trim();
+    const ccb=uso.substring(0,7),parcS=uso.substring(7,10);
+    const parc=parcS&&/^\d+$/.test(parcS)?parseInt(parcS,10):0;
+    const valRaw=line.substring(126,139);
+    const valor=valRaw&&/^\d+$/.test(valRaw.trim())?parseInt(valRaw,10)/100:0;
+    const vencRaw=line.substring(120,126),emissRaw=line.substring(150,156);
+    const cpfDigits=line.substring(220,234).replace(/\D/g,'');
+    const nome=fld(line,234,264);
+    const cep=fld(line,326,334);
+    const cedente=fld(line,334,380);
+    const cnpj=fmtCnpj(fld(line,380,394));
+    const occ=line.substring(108,110);
+    return{_t:'det',linha:idx+1,ccb,parc,vencRaw,vencimento:parseDate(vencRaw),vencYM:toYM(vencRaw),
+      emissRaw,emissao:parseDate(emissRaw),valor,cpfDigits,cpf:fmtCpf(cpfDigits),nome,cep,cedente,cnpj,occ};
+  }
+  return null;
+}
+function parseFile(text){
+  const lines=text.split(/\r?\n/);hdr={};const recs=[];
+  lines.forEach((line,i)=>{if(!line.trim())return;const r=parseLine(line,i);if(!r)return;
+    if(r._t==='hdr')Object.assign(hdr,r);else if(r._t==='det')recs.push(r);});
+  fileType=recs.some(r=>Object.keys(OCC).includes(r.occ))?'retorno':'remessa';
+  return recs;
+}
+
+// ═══ AGREGAÇÕES ═══
+function aggregate(){
+  const map={};
+  allRecs.forEach(r=>{
+    if(!map[r.ccb])map[r.ccb]={ccb:r.ccb,nome:r.nome,cpf:r.cpf,cpfDigits:r.cpfDigits,total:0,n:0,vparc:r.valor,
+      first:r.vencRaw,last:r.vencRaw,emissao:r.emissao,cedente:r.cedente,cnpj:r.cnpj,parcelas:[]};
+    const c=map[r.ccb];
+    c.total+=r.valor;c.n++;c.parcelas.push(r);
+    const k=s=>s.substring(4,6)+s.substring(2,4)+s.substring(0,2);
+    if(k(r.vencRaw)<k(c.first))c.first=r.vencRaw;
+    if(k(r.vencRaw)>k(c.last))c.last=r.vencRaw;
+  });
+  ccbAgg=Object.values(map).sort((a,b)=>b.total-a.total);
+}
+function monthlyFlow(){
+  const m={};
+  allRecs.forEach(r=>{if(r.vencYM)m[r.vencYM]=(m[r.vencYM]||0)+r.valor;});
+  return Object.entries(m).sort((a,b)=>a[0].localeCompare(b[0]));
+}
+
+// ═══ RENDER ═══
+function renderDash(file){
+  const tot=allRecs.reduce((s,r)=>s+r.valor,0);
+  const nCcb=ccbAgg.length;
+  const nDev=new Set(allRecs.map(r=>r.cpfDigits)).size;
+  const flow=monthlyFlow();
+  const ticket=nCcb?tot/nCcb:0;
+  const parcMed=allRecs.length?tot/allRecs.length:0;
+
+  // duration média ponderada (meses a partir do 1º vencimento)
+  const yms=flow.map(f=>f[0]);
+  const idxOf=ym=>yms.indexOf(ym);
+  let durNum=0;allRecs.forEach(r=>{durNum+=(idxOf(r.vencYM)+1)*r.valor;});
+  const duration=tot?durNum/tot:0;
+
+  // % do fluxo nos próximos 12 meses (gauge)
+  const first12=flow.slice(0,12).reduce((s,f)=>s+f[1],0);
+  const pct12=tot?first12/tot:0;
+
+  // topbar / hero
+  g('liveTxt').textContent=`${fileType==='retorno'?'Retorno':'Remessa'} ${parseDate(hdr.dataGer)||''}`;
+  g('heroEyebrow').textContent=`Consignado privado · ${nCcb} CCBs · ${fileType}`;
+  g('btnReset').style.display='inline-block';
+
+  // gauge: arco = % da face que entra em 12 meses
+  const ARC=395.8;
+  g('gaugeVal').style.strokeDasharray=`${(ARC*pct12).toFixed(1)} 527.8`;
+  g('gBig').innerHTML=`R$ ${brl0(tot)}`;
+  g('gAa').textContent=`${Math.round(pct12*100)}% entra em 12 meses`;
+  g('gEndsR').textContent=flow.length?ymLabel(flow[flow.length-1][0]):'—';
+
+  // KPIs
+  const pico=flow.reduce((mx,f)=>Math.max(mx,f[1]),0);
+  const picoYM=flow.find(f=>f[1]===pico);
+  g('kpis').innerHTML=`
+    <div class="kpi mintb"><span>Valor de face</span><b>R$ ${brl0(tot)}</b><em>${allRecs.length} parcelas a receber</em></div>
+    <div class="kpi"><span>CCBs · Sacados</span><b>${nCcb} · ${nDev}</b><em>ticket médio R$ ${brl0(ticket)} de face</em></div>
+    <div class="kpi"><span>Parcela média</span><b>R$ ${brl(parcMed)}</b><em>todas as parcelas do arquivo</em></div>
+    <div class="kpi"><span>Duration média</span><b>${duration.toFixed(1).replace('.',',')} <small>meses</small></b><em>ponderada pelo valor</em></div>
+    <div class="kpi amber"><span>Pico de caixa</span><b>R$ ${brl0(pico)}</b><em>${picoYM?'em '+ymLabel(picoYM[0]):''}</em></div>
+    <div class="kpi"><span>Janela de fluxo</span><b>${flow.length} <small>meses</small></b><em>${flow.length?ymLabel(flow[0][0])+' → '+ymLabel(flow[flow.length-1][0]):''}</em></div>`;
+
+  renderCombo(flow,pico);
+  ccbShown=10;srchTerm='';g('srch').value='';
+  renderCcbs();
+  renderConc(tot);
+  renderVenc(flow,pico);
+
+  g('techCard').innerHTML=`
+    <div class="kv"><span>Arquivo</span><b class="mono">${esc(file.name)}</b></div>
+    <div class="kv"><span>Tipo</span><b>${fileType==='retorno'?'Retorno':'Remessa'} CNAB 400</b></div>
+    <div class="kv"><span>Empresa</span><b>${esc(hdr.empresa||'—')}</b></div>
+    <div class="kv"><span>Banco</span><b>${esc(hdr.banco||'—')}</b></div>
+    <div class="kv"><span>Data de geração</span><b>${parseDate(hdr.dataGer)||'—'}</b></div>
+    <div class="kv"><span>Cedente</span><b>${esc(ccbAgg[0]?.cedente||'—')}</b></div>
+    <div class="kv"><span>CNPJ do cedente</span><b class="mono">${esc(ccbAgg[0]?.cnpj||'—')}</b></div>
+    <div class="kv"><span>Registros de detalhe</span><b class="mono">${allRecs.length}</b></div>`;
+
+  g('foot').innerHTML=`CredIA Soluções Ltda · cockpit gerado de ${esc(file.name)}<br><a href="index.html">abrir versão desktop →</a>`;
+  g('upScreen').style.display='none';
+  g('dash').style.display='block';
+  window.scrollTo(0,0);
+}
+
+function renderCombo(flow,pico){
+  const n=flow.length||1,bw=22,gap=17,pad=14;
+  const W=Math.max(560,pad*2+n*(bw+gap)),H=260,chartH=200,base=226;
+  let s='';
+  flow.forEach((f,i)=>{
+    const h=pico?Math.max(3,f[1]/pico*chartH):3;
+    const x=pad+i*(bw+gap);
+    s+=`<rect class="cbar" x="${x}" y="${base-h}" width="${bw}" rx="4" height="${h}"/>`;
+    const step=Math.max(1,Math.ceil(n/12));
+    if(i%step===0)s+=`<text class="ax" x="${x+bw/2}" y="${H-8}" text-anchor="middle">${ymLabel(f[0])}</text>`;
+  });
+  const svg=g('comboSvg');
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.style.width=W+'px';
+  svg.innerHTML=s;
+}
+
+function renderCcbs(){
+  const t=srchTerm.toLowerCase();
+  const list=ccbAgg.filter(c=>!t||[c.nome,c.cpf,c.ccb].join(' ').toLowerCase().includes(t));
+  g('ccbTitle').textContent=`CCBs em carteira · ${list.length}`;
+  const slice=list.slice(0,ccbShown);
+  g('ccbList').innerHTML=slice.map((c,i)=>{
+    const liq=fileType==='retorno'?c.parcelas.filter(p=>p.occ==='06').length:0;
+    return`<details class="ccb">
+<summary>
+ <span class="ccb-i mono">${String(i+1).padStart(2,'0')}</span>
+ <span class="ccb-main"><b>${esc(c.nome)}</b><small>${c.n}× R$ ${brl(c.vparc)}</small></span>
+ <span class="ccb-rate mono">R$ ${brl0(c.total)}<small>FACE</small></span>
+</summary>
+<div class="ccb-body">
+ <div class="kv"><span>CCB / contrato</span><b class="mono">${esc(c.ccb)}</b></div>
+ <div class="kv"><span>CPF</span><b class="mono">${esc(c.cpf)}</b></div>
+ <div class="kv"><span>Emissão</span><b>${esc(c.emissao)||'—'}</b></div>
+ <div class="kv"><span>Parcelas</span><b>${c.n}× de R$ ${brl(c.vparc)}</b></div>
+ <div class="kv"><span>Valor de face</span><b class="mint">R$ ${brl(c.total)}</b></div>
+ <div class="kv"><span>Fluxo</span><b>${parseDate(c.first)} → ${parseDate(c.last)}</b></div>
+ ${fileType==='retorno'?`<div class="kv"><span>Liquidadas</span><b>${liq} de ${c.n}</b></div>`:''}
+ <div class="parc-chips">${c.parcelas.slice().sort((a,b)=>a.parc-b.parc).map(p=>`<span class="parc-chip">${String(p.parc).padStart(2,'0')} · ${p.vencimento.slice(0,5)}</span>`).join('')}</div>
+</div>
+</details>`;}).join('');
+  g('showMore').style.display=list.length>ccbShown?'block':'none';
+}
+
+function renderConc(tot){
+  // top 5 por sacado (CPF)
+  const byDev={};
+  ccbAgg.forEach(c=>{
+    if(!byDev[c.cpfDigits])byDev[c.cpfDigits]={nome:c.nome,total:0,n:0};
+    byDev[c.cpfDigits].total+=c.total;byDev[c.cpfDigits].n++;
+  });
+  const top=Object.values(byDev).sort((a,b)=>b.total-a.total).slice(0,5);
+  const mx=top[0]?.total||1;
+  const shortName=n=>{const p=n.split(/\s+/);return p.length>1?p[0]+' '+p[p.length-1]:n;};
+  const top5pct=tot?top.reduce((s,d)=>s+d.total,0)/tot*100:0;
+  g('concCard').innerHTML=top.map(d=>{
+    const pct=tot?d.total/tot*100:0;
+    return`<div class="uf-row">
+      <span class="uf-tag mono">${pct.toFixed(1).replace('.',',')}%</span>
+      <div class="uf-track"><div class="uf-fill" style="width:${(d.total/mx*100).toFixed(0)}%"></div></div>
+      <span class="uf-val">${esc(shortName(d.nome))}</span>
+      <span class="uf-n">R$ ${brl(d.total)}${d.n>1?' · '+d.n+' CCBs':''}</span>
+    </div>`;}).join('')+
+    `<div class="card-note">Top 5 = ${top5pct.toFixed(1).replace('.',',')}% do valor de face total.</div>`;
+}
+
+function renderVenc(flow,pico){
+  g('vencCard').innerHTML=flow.map(f=>`<div class="uf-row">
+    <span class="uf-tag mono">${ymLabel(f[0])}</span>
+    <div class="uf-track"><div class="uf-fill" style="width:${pico?(f[1]/pico*100).toFixed(0):0}%"></div></div>
+    <span class="uf-val mono">R$ ${brl0(f[1])}</span>
+  </div>`).join('');
+}
+
+// ═══ FILE HANDLING ═══
+function loadFile(file){
+  const rd=new FileReader();
+  rd.onload=e=>{
+    const text=detectEnc(e.target.result);
+    allRecs=parseFile(text);
+    if(!allRecs.length){alert('Nenhum registro de detalhe (tipo "1") encontrado. Verifique se o arquivo é CNAB 400 Celcoin.');return;}
+    aggregate();
+    renderDash(file);
+  };
+  rd.readAsArrayBuffer(file);
+}
+function resetFile(){
+  allRecs=[];hdr={};ccbAgg=[];
+  g('dash').style.display='none';
+  g('upScreen').style.display='block';
+  g('btnReset').style.display='none';
+  g('liveTxt').textContent='Aguardando arquivo';
+  g('fi').value='';
+  window.scrollTo(0,0);
+}
+g('fi').addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0]);});
+const ua=g('upArea');
+ua.addEventListener('dragover',e=>{e.preventDefault();ua.classList.add('drag');});
+ua.addEventListener('dragleave',()=>ua.classList.remove('drag'));
+ua.addEventListener('drop',e=>{e.preventDefault();ua.classList.remove('drag');if(e.dataTransfer.files[0])loadFile(e.dataTransfer.files[0]);});
+ua.addEventListener('click',()=>g('fi').click());
+g('srch').addEventListener('input',e=>{srchTerm=e.target.value;ccbShown=10;renderCcbs();});
+</script>
+</body>
+</html>
