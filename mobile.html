@@ -401,7 +401,7 @@ function renderDash(file){
   const ARC=395.8;
   g('gaugeVal').style.strokeDasharray=`${(ARC*pct12).toFixed(1)} 527.8`;
   g('gBig').innerHTML=`R$ ${brl0(tot)}`;
-  g('gAa').textContent=`${Math.round(pct12*100)}% entra em 12 meses`;
+  g('gAa').textContent=`${Math.round(pct12*100)}% da face vence em 12m`;
   g('gEndsR').textContent=flow.length?ymLabel(flow[flow.length-1][0]):'—';
 
   // KPIs
